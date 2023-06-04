@@ -17,4 +17,4 @@ Install ezinstaling-api with git
 
 Maintained by [rvyk](https://github.com/rvyk).
 Built Using [Node.js](https://nodejs.org/en), [Nest.js](https://nestjs.com/), [Mongoose](https://mongoosejs.com/), [Okhttp](https://www.npmjs.com/package/okhttp), [Firebase](https://firebase.google.com/). <br>
-[See Apache License 2.0](https://github.com/rvyk/ezinstaling-api/blob/master/LICENSE)
+[See Apache License 2.0](https://github.com/bettervulcan/ezinstaling-api/blob/main/LICENSE)
