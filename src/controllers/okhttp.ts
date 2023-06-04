@@ -1,7 +1,5 @@
 import { RequestBuilder, FormEncodingBuilder } from "okhttp";
 import parse from "node-html-parser";
-import { addWord } from "../mongo";
-import { writeUserData } from "../firebase";
 import { Logger } from "@nestjs/common";
 
 const logger = new Logger("OkHTTP");
@@ -41,7 +39,7 @@ function loginToInstaling(email: string, password: string): Promise<any> {
           .header("Cookie", phpsessid)
           .buildAndExecute()
           .then((dispatcherOutput) => {
-            let appid = "";
+            let appid = "app=app_84";
             if (dispatcherOutput.response.headers["set-cookie"]) {
               appid =
                 dispatcherOutput.response.headers["set-cookie"][0].split(
