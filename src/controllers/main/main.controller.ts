@@ -25,6 +25,12 @@ import { MakeSessionService } from "src/services/make-session/make-session.servi
 import { UsersCountService } from "src/services/users-count/users-count.service";
 import { SigninEmailService } from "src/services/signin-email/signin-email.service";
 import { Email } from "./dto/email.dto";
+import { HomeworksService } from "src/services/homeworks/homeworks.service";
+import {
+  getHomeworkSummaryValidator,
+  getHomeworksValidator,
+  saveHomeworkValidator,
+} from "./dto/homeworks.dto";
 
 @Controller("/")
 export class MainController {
@@ -48,6 +54,7 @@ export class InstalingController {
     private readonly checkSessionService: CheckSessionService,
     private readonly makeSessionService: MakeSessionService,
     private readonly userCountService: UsersCountService,
+    private readonly homeworksService: HomeworksService,
     private readonly signInEmailService: SigninEmailService
   ) {}
 
@@ -97,6 +104,27 @@ export class InstalingController {
   @UsePipes(new ValidationPipe())
   signIn(@Body() data: Email) {
     return this.signInEmailService.signIn(data);
+  }
+
+  @Post("instaling/gethomeworks")
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe())
+  getHomeworks(@Body() validator: getHomeworksValidator) {
+    return this.homeworksService.getHomeworksService(validator);
+  }
+
+  @Post("instaling/gethomeworksummary")
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe())
+  getHomeworkSummary(@Body() validator: getHomeworkSummaryValidator) {
+    return this.homeworksService.getHomeworkSummaryService(validator);
+  }
+
+  @Post("instaling/savehomework")
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe())
+  saveHomework(@Body() validator: saveHomeworkValidator) {
+    return this.homeworksService.saveHomeworkService(validator);
   }
 
   @Get("instaling/getanswer")

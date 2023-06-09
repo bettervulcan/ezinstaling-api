@@ -1,9 +1,6 @@
 import { Injectable, ForbiddenException, Logger } from "@nestjs/common";
 import axios from "axios";
-import {
-  Credentials,
-  Settings,
-} from "src/controllers/main/dto/credentials.dto";
+import { Credentials } from "src/controllers/main/dto/credentials.dto";
 import {
   generateQuestion,
   initSession,
@@ -18,12 +15,7 @@ import {
   writeUserData,
 } from "src/firebase";
 import { addWord, getAnswer } from "src/mongo";
-import {
-  getRndInteger,
-  delay,
-  introduceTypo,
-  getSynonyms,
-} from "src/utils/utils";
+import { getRndInteger, delay } from "src/utils/utils";
 
 const logger = new Logger("MakeSession");
 
@@ -43,12 +35,7 @@ const getAnswerExploit = async (question) => {
   return answerExploit;
 };
 
-const makeSession = async (
-  res: any,
-  login: string,
-  password: string,
-  settings: Settings
-) => {
+const makeSession = async (res: any, login: string, password: string) => {
   try {
     const status = await getStatus(login);
     if (status.session) {
@@ -75,111 +62,51 @@ const makeSession = async (
     await initSession(phpsessid, appid, studentid);
     await writeUserData(login, "Inicjalizowanie sesji");
     res.status(200).send({ success: true, message: "Sesja jest wykonywana" });
-    const modifiedWords = [];
-    while (true) {
-      const status = await getStatus(login);
-      const question = await generateQuestion(phpsessid, appid, studentid);
+    setTimeout(async () => {
+      while (true) {
+        const status = await getStatus(login);
+        const question = await generateQuestion(phpsessid, appid, studentid);
 
-      if (question.ended || !status.session) {
-        if (!question.instalDays || !question.words || !question.correct) {
-          logger.log(`End of session for: ${login} by admin`);
-          await writeUserData(login, "Sesja przerwana przez administratora");
+        if (question.ended || !status.session) {
+          if (!question.instalDays || !question.words || !question.correct) {
+            logger.log(`End of session for: ${login} by admin`);
+            await writeUserData(login, "Sesja przerwana przez administratora");
+            setStatus(login, false);
+            break;
+          }
+
+          logger.log(`End of session for: ${login}`);
+          await writeUserData(login, "Sesja zakończona");
           setStatus(login, false);
           break;
         }
 
-        logger.log(`End of session for: ${login}`);
-        await writeUserData(login, "Sesja zakończona");
-        setStatus(login, false);
-        break;
-      }
+        const answerExploit = await getAnswerExploit(question);
 
-      let answerExploit = await getAnswerExploit(question);
-
-      // legit
-
-      const { minDelay, maxDelay, typos, capitalWords, synonyms } = settings;
-      let loopModified = false;
-      if (!modifiedWords.includes(answerExploit)) {
-        if (typos?.enabled) {
-          if (Math.random() <= typos.chance) {
-            modifiedWords.push(answerExploit);
-            logger.verbose(`Typos for: ${answerExploit}`);
-            answerExploit = await introduceTypo(answerExploit);
-            loopModified = true;
-          }
+        let delayTime = 0;
+        if (answerExploit) {
+          delayTime = getRndInteger(100, 200) * 2 * answerExploit.length;
+          await delay(delayTime);
         }
-        if (capitalWords?.enabled) {
-          if (Math.random() <= capitalWords.chance) {
-            modifiedWords.push(answerExploit);
-            logger.verbose(`Capital letter for: ${answerExploit}`);
-            answerExploit =
-              answerExploit.charAt(0).toUpperCase() + answerExploit.slice(1);
-            loopModified = true;
-          }
-        }
-        if (synonyms?.enabled) {
-          if (Math.random() <= synonyms.chance) {
-            modifiedWords.push(answerExploit);
-            logger.verbose(`Synonym for: ${answerExploit}`);
-            answerExploit = await getSynonyms(answerExploit);
-            loopModified = true;
-          }
-        }
-      }
 
-      let delayTime = 0;
-      if (answerExploit) {
-        delayTime =
-          minDelay && maxDelay
-            ? getRndInteger(minDelay, maxDelay) * answerExploit.length
-            : getRndInteger(200, 330) * answerExploit.length;
-
-        await delay(delayTime);
-      }
-
-      const fails = [
-        "zła odpowiedź",
-        "dobrze",
-        "synonim",
-        "zła wielkość liter",
-        "literówka",
-      ];
-
-      await sendAnswer(
-        phpsessid,
-        appid,
-        studentid,
-        question.question.id,
-        answerExploit
-      ).then(async (data) => {
-        switch (data.output.grade) {
-          case 1:
-            logger.log(
-              `Answer: (${answerExploit}) for user: ${login}, wait (${Math.round(
-                delayTime * 1.5
-              )}ms)`
-            );
-            await writeUserData(
-              login,
-              `Uzupełniono  (${answerExploit}), czekam (${Math.round(
-                delayTime * 1.5
-              )}ms)`
-            );
-            break;
-          default:
-            logger.warn(
-              `Answer: (${answerExploit}) for user: ${login} with (${
-                fails[data.output.grade]
-              }), wait (${Math.round(delayTime * 1.5)}ms)`
-            );
-            await writeUserData(
-              login,
-              `Uzupełniono (${answerExploit}) z błędem (${
-                fails[data.output.grade]
-              }), czekam (${Math.round(delayTime * 1.5)}ms)`
-            );
-            if (!loopModified) {
+        await sendAnswer(
+          phpsessid,
+          appid,
+          studentid,
+          question.question.id,
+          answerExploit
+        ).then(async (data) => {
+          switch (data.output.grade) {
+            case 1:
+              logger.log(
+                `Answer: (${answerExploit}) for user: ${login} in (${delayTime}ms)`
+              );
+              await writeUserData(
+                login,
+                `Rozwiązano: ${answerExploit} (w ${delayTime}ms)`
+              );
+              break;
+            default:
               let word;
               if (data.output.hasOwnProperty("word")) {
                 word = data.output.word;
@@ -199,12 +126,12 @@ const makeSession = async (
                     );
                   });
               }
-            }
-            break;
-        }
-      });
-      await delay(delayTime * 1.5);
-    }
+              break;
+          }
+        });
+        await delay(delayTime);
+      }
+    }, 0);
     return {
       success: true,
       message: "Sesja jest wykonywana",
@@ -218,26 +145,7 @@ const makeSession = async (
 @Injectable()
 export class MakeSessionService {
   async doSession(credentials: Credentials, res: any) {
-    const { login, password, settings } = credentials;
-    if (
-      settings?.minDelay < 150 ||
-      settings?.maxDelay > 5000 ||
-      settings.typos.chance > 0.25 ||
-      settings.capitalWords.chance > 0.25 ||
-      settings.synonyms.chance > 0.25
-    ) {
-      throw new ForbiddenException({
-        success: false,
-        message: "Minimum and maximum values",
-        values: {
-          minDelay: 150,
-          maxDelay: 5000,
-          typos: "chance < 0.25 (25%)",
-          capitalWords: "chance < 0.25 (25%)",
-          synonyms: "chance < 0.25 (25%)",
-        },
-      });
-    }
+    const { login, password } = credentials;
     try {
       const banned = await getBan(login);
       if (banned) {
@@ -250,7 +158,7 @@ export class MakeSessionService {
           message: "User banned",
         });
       }
-      await makeSession(res, login, password, settings);
+      await makeSession(res, login, password);
     } catch (err) {
       console.error(err);
       throw err;

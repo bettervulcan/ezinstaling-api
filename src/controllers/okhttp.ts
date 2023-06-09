@@ -62,6 +62,19 @@ function loginToInstaling(email: string, password: string): Promise<any> {
                 const todaySessionCompleted = document.querySelector(
                   "#student_panel > h4"
                 );
+                const instalingversion = document.querySelector(
+                  "#footer > div > p.span4.text-center"
+                ).innerText;
+                const splitedInstalingVersion = instalingversion.split(" ")[1];
+
+                const homeworkCount = document
+                  .querySelector(
+                    "#student_panel > div.alert.alert-info > strong"
+                  )
+                  ?.text?.trim()
+                  ?.split(":")[1]
+                  ?.replace(" ", "");
+
                 if (todaySessionCompleted) todaySessionCompletedBool = true;
                 resolve({
                   success: true,
@@ -71,6 +84,8 @@ function loginToInstaling(email: string, password: string): Promise<any> {
                   studentid,
                   buttonText,
                   todaySessionCompleted: todaySessionCompletedBool,
+                  instalingVersion: splitedInstalingVersion,
+                  homeworkCount,
                 });
               });
           })

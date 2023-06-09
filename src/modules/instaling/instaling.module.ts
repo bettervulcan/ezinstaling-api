@@ -9,6 +9,7 @@ import { CheckSessionService } from "src/services/check-session/check-session.se
 import { MakeSessionService } from "src/services/make-session/make-session.service";
 import { UsersCountService } from "src/services/users-count/users-count.service";
 import { SigninEmailService } from "src/services/signin-email/signin-email.service";
+import { HomeworksService } from "src/services/homeworks/homeworks.service";
 
 @Module({
   imports: [],
@@ -23,6 +24,7 @@ import { SigninEmailService } from "src/services/signin-email/signin-email.servi
     MakeSessionService,
     UsersCountService,
     SigninEmailService,
+    HomeworksService,
   ],
 })
 export class InstalingModule {}
