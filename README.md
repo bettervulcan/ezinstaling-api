@@ -3,14 +3,6 @@
   <img width="100%" src="https://github.com/rvyk/ezinstaling-api/blob/master/brand/banner-title.png?raw=true">
 </p>
 
-# Installation
-
-Install ezinstaling-api with git
-
-```bash
-  git clone https://github.com/rvyk/ezinstaling-api.git ezinstaling-api && cd ezinstaling-api && yarn
-```
-
 <hr>
 
 <!-- Licenses, etc... -->
